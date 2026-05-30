@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulateur de revenus — Événement</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=boska@500,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#f7f6f2; --surface:#fbfaf7; --surface-2:#f0ece4; --surface-3:#e5dfd6;
+      --border:#d4cfc6; --divider:#e3ddd5;
+      --text:#27231d; --muted:#67625b; --faint:#9b968e;
+      --primary:#01696f; --primary-soft:#d5e6e5;
+      --success:#3d6e1f; --success-soft:#daeacf;
+      --warning:#a86e00; --warning-soft:#f2e3c2;
+      --danger:#b03057; --danger-soft:#f2d4de;
+      --info:#1e5e8a; --info-soft:#d2e5f4;
+      --purple:#6b3fa0; --purple-soft:#ece0f6;
+      --radius-sm:.5rem; --radius:.85rem; --radius-lg:1.1rem; --radius-xl:1.5rem;
+      --shadow:0 2px 10px rgba(20,17,12,.06); --shadow-md:0 12px 32px rgba(20,17,12,.09);
+      --font:'Satoshi',Inter,sans-serif; --font-display:'Boska',Georgia,serif;
+    }
+    [data-theme="dark"] {
+      --bg:#161513; --surface:#1d1b18; --surface-2:#252320; --surface-3:#2e2b27;
+      --border:#38342f; --divider:#302d29;
+      --text:#f0ece4; --muted:#b0aa9f; --faint:#7a7469;
+      --primary:#5da8b0; --primary-soft:#1e3537;
+      --success:#88b860; --success-soft:#243520;
+      --warning:#d9a535; --warning-soft:#382f18;
+      --danger:#d97095; --danger-soft:#3c1e2b;
+      --info:#6da8d5; --info-soft:#1b2f3e;
+      --purple:#b085e0; --purple-soft:#2e1f45;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{-webkit-font-smoothing:antialiased}
+    body{min-height:100dvh;font-family:var(--font);font-size:1rem;line-height:1.6;background:var(--bg);color:var(--text)}
+    button,input,select{font:inherit;color:inherit}
+    button{cursor:pointer;border:none;background:none}
+    table{width:100%;border-collapse:collapse}
+    .page{max-width:1100px;margin:0 auto;padding:1rem}
+    .topbar{display:flex;justify-content:space-between;align-items:center;padding:1rem 0 2rem}
+    .brand{display:flex;align-items:center;gap:.75rem}
+    .brand-icon{width:40px;height:40px;color:var(--primary)}
+    .brand-label{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+    .theme-btn{width:44px;height:44px;display:grid;place-items:center;border-radius:999px;background:var(--surface);border:1px solid var(--border)}
+    .hero{margin-bottom:2rem}
+    .hero h1{font-family:var(--font-display);font-size:clamp(1.8rem,1.3rem+2vw,2.8rem);line-height:1.05}
+    .hero p{margin-top:.6rem;color:var(--muted);max-width:60ch}
+    .kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:2.5rem}
+    .kpi{padding:1rem 1.1rem;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface)}
+    .kpi.primary{background:var(--primary-soft)} .kpi.success{background:var(--success-soft)}
+    .kpi.warning{background:var(--warning-soft)} .kpi.danger{background:var(--danger-soft)} .kpi.purple{background:var(--purple-soft)}
+    .kpi .klabel{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .kpi .kvalue{font-size:1.45rem;font-weight:700;line-height:1.1;margin-top:.3rem;font-variant-numeric:tabular-nums}
+    .kpi .knote{font-size:.78rem;color:var(--muted);margin-top:.2rem}
+    .section{margin-bottom:2.5rem}
+    .section-title{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem}
+    .section-num{width:28px;height:28px;border-radius:999px;background:var(--primary);color:white;font-size:.75rem;font-weight:700;display:grid;place-items:center;flex:none}
+    .section-title h2{font-size:1.15rem;font-weight:700}
+    .legend{display:flex;gap:1.25rem;flex-wrap:wrap;padding:.65rem 1rem;border-radius:var(--radius);background:var(--surface-2);border:1px solid var(--border);margin-bottom:1.25rem;font-size:.8rem;font-weight:600}
+    .legend-item{display:flex;align-items:center;gap:.4rem}
+    .dot{width:9px;height:9px;border-radius:999px;flex:none}
+    .dot.req{background:var(--primary)} .dot.calc{background:var(--border)}
+    .toolbar{display:flex;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap}
+    .btn{padding:.65rem 1.1rem;border-radius:var(--radius);font-weight:700;font-size:.9rem;display:inline-flex;align-items:center;gap:.5rem}
+    .btn:hover{opacity:.85}
+    .btn-primary{background:var(--primary);color:white}
+    .btn-ghost{background:var(--surface-2);border:1px solid var(--border)}
+    .card-list{display:grid;gap:.9rem}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)}
+    .card-header{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1.2rem;background:var(--surface-2);border-bottom:1px solid var(--border)}
+    .card-header strong{font-size:.92rem}
+    .card-body{padding:1.1rem 1.2rem}
+    .fields{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:.85rem;margin-bottom:1rem}
+    .field .flabel{display:flex;align-items:center;gap:.4rem;margin-bottom:.35rem}
+    .field .flabel span{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+    .badge-req{padding:.1rem .38rem;border-radius:999px;background:var(--primary-soft);color:var(--primary);font-size:.62rem;font-weight:700;text-transform:uppercase}
+    .badge-opt{padding:.1rem .38rem;border-radius:999px;background:var(--surface-3);color:var(--faint);font-size:.62rem;font-weight:700;text-transform:uppercase}
+    .badge-calc{padding:.1rem .38rem;border-radius:999px;background:var(--warning-soft);color:var(--warning);font-size:.62rem;font-weight:700;text-transform:uppercase}
+    input.editable{width:100%;padding:.65rem .85rem;border-radius:var(--radius-sm);border:2px solid var(--border);background:var(--surface)}
+    input.editable:focus{outline:none;border-color:var(--primary)}
+    input.readonly{width:100%;padding:.65rem .85rem;border-radius:var(--radius-sm);border:1px dashed var(--border);background:var(--surface-2);color:var(--muted);cursor:default}
+    .row-results{display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem;padding-top:.9rem;border-top:1px solid var(--divider)}
+    .rbox{padding:.55rem .75rem;border-radius:var(--radius-sm);background:var(--surface-2);border:1px solid var(--divider)}
+    .rbox.hi{background:var(--primary-soft);border-color:var(--primary)}
+    .rbox .rl{font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+    .rbox .rv{font-size:.98rem;font-weight:700;margin-top:.2rem;font-variant-numeric:tabular-nums}
+    .del-btn{width:34px;height:34px;border-radius:999px;display:grid;place-items:center;background:var(--danger-soft);color:var(--danger);font-size:1rem;font-weight:700;flex:none}
+    .empty-state{padding:2.5rem;text-align:center;border:2px dashed var(--border);border-radius:var(--radius-lg);color:var(--muted)}
+    .promo-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)}
+    .promo-header{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1.2rem;background:var(--purple-soft);border-bottom:1px solid var(--border)}
+    .promo-header strong{font-size:.92rem}
+    .promo-body{padding:1.1rem 1.2rem}
+    .promo-fields{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:.85rem;margin-bottom:1rem}
+    .promo-results{display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem;padding-top:.9rem;border-top:1px solid var(--divider)}
+    .promo-results .rbox.hi{background:var(--purple-soft);border-color:var(--purple)}
+    .commission-info{padding:.85rem 1.1rem;background:var(--info-soft);border:1px solid var(--info);border-radius:var(--radius);margin-bottom:1.25rem;font-size:.88rem}
+    .commission-info strong{display:block;margin-bottom:.3rem}
+    .table-wrap{border-radius:var(--radius-lg);border:1px solid var(--border);overflow:hidden}
+    th,td{padding:.7rem 1rem;border-bottom:1px solid var(--divider);text-align:left;white-space:nowrap;font-size:.9rem}
+    th{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--surface-2)}
+    tr:last-child td{border-bottom:none}
+    .final-summary{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius-xl);padding:1.5rem 1.75rem;margin-bottom:2rem}
+    .final-summary h3{font-family:var(--font-display);font-size:1.4rem;margin-bottom:1rem}
+    .final-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+    .final-box{padding:1rem 1.2rem;border-radius:var(--radius-lg);border:1px solid var(--border)}
+    .final-box .fname{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem}
+    .final-box .fvalue{font-size:1.7rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+    .final-box .fsub{font-size:.82rem;color:var(--muted);margin-top:.35rem}
+    .final-box.a{background:var(--success-soft);border-color:var(--success)}
+    .final-box.b{background:var(--danger-soft);border-color:var(--danger)}
+    .final-box.c{background:var(--primary-soft);border-color:var(--primary)}
+    .coverage-bar{display:flex;flex-wrap:wrap;align-items:center;gap:1rem;padding:1rem 1.25rem;background:var(--info-soft);border:1px solid var(--info);border-radius:var(--radius-lg);margin-bottom:1.75rem}
+    .coverage-label{display:flex;align-items:center;gap:.5rem;font-weight:700;font-size:.9rem;color:var(--info);flex:none}
+    .coverage-options{display:flex;gap:.5rem}
+    .cov-btn{padding:.5rem 1rem;border-radius:var(--radius);font-weight:700;font-size:.85rem;border:2px solid var(--info);color:var(--info);background:transparent;cursor:pointer}
+    .cov-btn.active{background:var(--info);color:white}
+    .coverage-hint{font-size:.78rem;color:var(--muted);width:100%}
+    .promo-options{display:flex;flex-wrap:wrap;align-items:center;gap:1.25rem;padding-top:.9rem;border-top:1px solid var(--divider);margin-top:.25rem}
+    .toggle-label{display:flex;align-items:center;gap:.6rem;cursor:pointer;font-size:.9rem;font-weight:600;user-select:none}
+    .toggle-label input[type=checkbox]{position:absolute;opacity:0;width:0;height:0}
+    .toggle-track{position:relative;width:42px;height:24px;border-radius:999px;background:var(--border);transition:background .2s;flex:none}
+    .toggle-thumb{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:white;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+    .toggle-label input:checked + .toggle-track{background:var(--primary)}
+    .toggle-label input:checked + .toggle-track .toggle-thumb{transform:translateX(18px)}
+    select.editable{width:100%;padding:.65rem .85rem;border-radius:var(--radius-sm);border:2px solid var(--border);background:var(--surface);appearance:auto}
+    select.editable:focus{outline:none;border-color:var(--primary)}
+    .manager-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)}
+    .manager-header{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1.2rem;background:var(--success-soft);border-bottom:1px solid var(--border)}
+    .manager-header strong{font-size:.92rem}
+    .manager-body{padding:1.1rem 1.2rem}
+    .manager-fields{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:.85rem;margin-bottom:1rem}
+    .summary-group-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:1.5rem 0 .75rem;padding-left:.25rem}
+    .summary-group-title:first-of-type{margin-top:0}
+    .summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.85rem;margin-bottom:.25rem}
+    .sbox{padding:.9rem 1.1rem;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface)}
+    .sbox .sname{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .sbox .sval{font-size:1.35rem;font-weight:700;line-height:1.15;margin-top:.3rem;font-variant-numeric:tabular-nums}
+    .sbox .snote{font-size:.75rem;color:var(--muted);margin-top:.25rem}
+    .sbox.accent-primary{background:var(--primary-soft);border-color:var(--primary)}
+    .sbox.accent-success{background:var(--success-soft);border-color:var(--success)}
+    .sbox.accent-warning{background:var(--warning-soft);border-color:var(--warning)}
+    .sbox.accent-danger{background:var(--danger-soft);border-color:var(--danger)}
+    .sbox.accent-purple{background:var(--purple-soft);border-color:var(--purple)}
+    @media(max-width:780px){
+      .kpi-strip,.summary-row{grid-template-columns:repeat(2,1fr)}
+      .fields,.promo-fields{grid-template-columns:1fr 1fr}
+      .row-results,.promo-results{grid-template-columns:repeat(2,1fr)}
+      .final-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M8 38h32M14 38V24M24 38V10M34 38V18" stroke-linecap="round"/>
+        <circle cx="14" cy="22" r="3" fill="currentColor" stroke="none"/>
+        <circle cx="24" cy="8" r="3" fill="currentColor" stroke="none"/>
+        <circle cx="34" cy="16" r="3" fill="currentColor" stroke="none"/>
+      </svg>
+      <span class="brand-label">Simulateur de revenus</span>
+    </div>
+    <button class="theme-btn" id="themeBtn" aria-label="Changer le thème">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </header>
+
+  <div class="hero">
+    <h1>Simulateur de revenus — Événement</h1>
+    <p>Simule tes ventes de billets, les frais, les promoters et leurs commissions. Vois en temps réel combien tu gardes réellement.</p>
+  </div>
+
+  <!-- Coverage toggle -->
+  <div class="coverage-bar">
+    <div class="coverage-label">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Remboursement de la salle
+    </div>
+    <div class="coverage-options">
+      <button class="cov-btn active" data-cov="50" id="cov50">50 % — Bonus réduits</button>
+      <button class="cov-btn" data-cov="100" id="cov100">100 % — Bonus pleins</button>
+    </div>
+    <div class="coverage-hint" id="covHint">Bonus actifs : 0–9 = 0 $ · 10–14 = 15 $ · 15–19 = 20 $ · 20–24 = 25 $ · 25–29 = 30 $ · 30+ = 35 $</div>
+  </div>
+
+  <div class="kpi-strip">
+    <div class="kpi primary"><div class="klabel">Billets vendus</div><div class="kvalue" id="kpiTickets">0</div><div class="knote">total</div></div>
+    <div class="kpi success"><div class="klabel">Revenu brut</div><div class="kvalue" id="kpiGross">0 $</div><div class="knote">avant frais</div></div>
+    <div class="kpi warning"><div class="klabel">Frais billets</div><div class="kvalue" id="kpiFees">0 $</div><div class="knote">déduits</div></div>
+    <div class="kpi danger"><div class="klabel">Commissions</div><div class="kvalue" id="kpiComm">0 $</div><div class="knote">promoters</div></div>
+    <div class="kpi purple"><div class="klabel">Profit net</div><div class="kvalue" id="kpiProfit">0 $</div><div class="knote">ce que tu gardes</div></div>
+  </div>
+
+  <section class="section">
+    <div class="section-title"><div class="section-num">1</div><h2>Types de billets</h2></div>
+    <div class="legend">
+      <div class="legend-item"><div class="dot req"></div> À remplir</div>
+      <div class="legend-item"><div class="dot calc"></div> Calculé automatiquement</div>
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-primary" id="addTicketBtn">+ Ajouter un type de billet</button>
+      <button class="btn btn-ghost" id="resetBtn">Charger un exemple</button>
+    </div>
+    <div class="card-list" id="ticketList"></div>
+    <div class="empty-state" id="ticketEmpty">Aucun billet. Clique sur <strong>+ Ajouter un type de billet</strong>.</div>
+  </section>
+
+  <section class="section">
+    <div class="section-title"><div class="section-num">2</div><h2>Managers</h2></div>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem">Les managers reçoivent 10 % des ventes générées par leurs promoters. Ajoute d'abord les managers ici, puis assigne-les aux promoters ci-dessous.</p>
+    <div class="toolbar">
+      <button class="btn btn-primary" id="addManagerBtn">+ Ajouter un manager</button>
+    </div>
+    <div class="card-list" id="managerList"></div>
+    <div class="empty-state" id="managerEmpty">Aucun manager. Les managers reçoivent 10 % des ventes de leurs promoters.</div>
+  </section>
+
+  <section class="section">
+    <div class="section-title"><div class="section-num">3</div><h2>Promoters</h2></div>
+    <div class="commission-info">
+      <strong>Système de commission — Option 3 (bonus par pallier sans accumulation)</strong>
+      5 $/billet pour tous · Bonus : 0–9 billets = 0 $ · 10–14 = 15 $ · 15–19 = 20 $ · 20–24 = 25 $ · 25–29 = 30 $ · 30+ = 35 $
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-primary" id="addPromoBtn">+ Ajouter un promoter</button>
+    </div>
+    <div class="card-list" id="promoList"></div>
+    <div class="empty-state" id="promoEmpty">Aucun promoter. Clique sur <strong>+ Ajouter un promoter</strong>.</div>
+  </section>
+
+  <section class="section">
+    <div class="section-title"><div class="section-num">4</div><h2>Résumé final</h2></div>
+
+    <!-- Ventes -->
+    <div class="summary-group-title">📊 Ventes</div>
+    <div class="summary-row">
+      <div class="sbox"><div class="sname">Billets vendus</div><div class="sval" id="sumTickets">0</div><div class="snote">total simulé</div></div>
+      <div class="sbox"><div class="sname">Vendus via promoters</div><div class="sval" id="sumPromoSold">0</div><div class="snote">par les promoters</div></div>
+      <div class="sbox"><div class="sname">Vendus directement</div><div class="sval" id="sumDirectSold">0</div><div class="snote">sans promoter</div></div>
+      <div class="sbox accent-primary"><div class="sname">Revenu brut</div><div class="sval" id="sumGross">0 $</div><div class="snote">avant toute déduction</div></div>
+    </div>
+
+    <!-- Déductions -->
+    <div class="summary-group-title">💸 Déductions</div>
+    <div class="summary-row">
+      <div class="sbox accent-warning"><div class="sname">Frais de billets</div><div class="sval" id="sumFees">0 $</div><div class="snote">frais de plateforme</div></div>
+      <div class="sbox accent-warning"><div class="sname">Frais / billet moyen</div><div class="sval" id="sumFeeAvg">0 $</div><div class="snote">moyenne pondérée</div></div>
+      <div class="sbox accent-danger"><div class="sname">Commissions promoters</div><div class="sval" id="sumComm">0 $</div><div class="snote">base + bonus</div></div>
+      <div class="sbox accent-danger"><div class="sname">Comm. / billet moyen</div><div class="sval" id="sumCommAvg">0 $</div><div class="snote">sur les billets via promoters</div></div>
+    </div>
+
+    <!-- Profits -->
+    <div class="summary-group-title">✅ Profits</div>
+    <div class="summary-row">
+      <div class="sbox accent-success"><div class="sname">Revenu net</div><div class="sval" id="sumNetNoComm">0 $</div><div class="snote">brut − frais de billets seulement</div></div>
+      <div class="sbox accent-success"><div class="sname">Profit réel (avec promoters)</div><div class="sval" id="finalWithPromo">0 $</div><div class="snote">net − comm. promoters − comm. managers</div></div>
+      <div class="sbox accent-purple"><div class="sname">Coût total des commissions</div><div class="sval" id="sumDiff">0 $</div><div class="snote">promoters + managers combinés</div></div>
+      <div class="sbox accent-purple"><div class="sname">% du revenu net en commissions</div><div class="sval" id="sumCommPct">0 %</div><div class="snote">portion du revenu net versée en commissions</div></div>
+    </div>
+
+    <!-- Manager commission in summary -->
+    <div class="summary-group-title">👔 Managers</div>
+    <div class="summary-row" style="grid-template-columns:repeat(2,1fr);max-width:600px">
+      <div class="sbox accent-success"><div class="sname">Total commissions managers</div><div class="sval" id="sumManagerComm">0 $</div><div class="snote">10 % des ventes via leurs promoters</div></div>
+      <div class="sbox"><div class="sname">Total toutes commissions</div><div class="sval" id="sumAllComm">0 $</div><div class="snote">promoters + managers</div></div>
+    </div>
+    <div class="table-wrap" style="margin-bottom:1.5rem">
+      <table>
+        <thead><tr><th>Manager</th><th>Promoters assignés</th><th>Billets via promoters</th><th>Commission (10 %)</th></tr></thead>
+        <tbody id="managerDetailBody"></tbody>
+      </table>
+    </div>
+    <!-- Promoters detail -->
+    <div class="summary-group-title">👤 Détail par promoter</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Promoter</th>
+            <th>Billets vendus</th>
+            <th>Base (5$/billet)</th>
+            <th>Bonus pallier</th>
+            <th>Total comm.</th>
+            <th>Manager</th>
+            <th>Comm. manager</th>
+          </tr>
+        </thead>
+        <tbody id="promoDetailBody"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+  const fmt  = v => new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD',minimumFractionDigits:2}).format(v);
+  const fmtN = v => new Intl.NumberFormat('fr-CA').format(v);
+  const uuid = () => crypto.randomUUID();
+  const esc  = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  function setText(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
+
+  // Bonus tables: Option 3 — no accumulation, 5$/ticket base
+  const BONUS = {
+    50:  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  15, 15, 15, 15, 15,  20, 20, 20, 20, 20,  25, 25, 25, 25, 25,  30, 30, 30, 30, 30],
+    100: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  25, 25, 25, 25, 25,  30, 30, 30, 30, 30,  35, 35, 35, 35, 35,  40, 40, 40, 40, 40],
+  };
+  function getBonus(sold, cov) {
+    if (sold <= 0) return 0;
+    const table = BONUS[cov] || BONUS[50];
+    if (sold - 1 < table.length) return table[sold - 1];
+    return cov === 100 ? 50 : 35;
+  }
+  function palierLabel(sold, cov) {
+    const b = getBonus(sold, cov);
+    if (sold >= 30) return `30+ → bonus ${b} $`;
+    if (sold >= 25) return `25–29 → bonus ${b} $`;
+    if (sold >= 20) return `20–24 → bonus ${b} $`;
+    if (sold >= 15) return `15–19 → bonus ${b} $`;
+    if (sold >= 10) return `10–14 → bonus ${b} $`;
+    return '0–9 → aucun bonus';
+  }
+  function calcComm(p, cov) {
+    const base  = p.sold * 5;
+    const bonus = p.bonusEnabled ? getBonus(p.sold, cov) : 0;
+    return { base, bonus, total: base + bonus };
+  }
+
+  // ─── State ──────────────────────────────────────────────────────────
+  let tickets   = [];
+  let managers  = [];
+  let promoters = [];
+  let coverage  = 50; // 50 or 100
+
+  function makeTicket(name='Billet régulier', price=20, sold=0, fee=10) {
+    return { id:uuid(), name, price, sold, fee };
+  }
+  function makeManager(name='Manager') {
+    return { id:uuid(), name };
+  }
+  function makePromo(name='Promoter') {
+    return { id:uuid(), name, sold:0, bonusEnabled:true, managerId:'' };
+  }
+
+  // ─── Ticket calc ────────────────────────────────────────────────────
+  function calcTicket(t) {
+    const gross = t.price * t.sold;
+    const fees  = gross * t.fee / 100;
+    return { gross, fees, net: gross - fees, feePerTicket: t.price * t.fee / 100 };
+  }
+
+  // ─── Global totals ──────────────────────────────────────────────────
+  function totals() {
+    let sold=0, gross=0, fees=0, net=0, comm=0, managerComm=0;
+    tickets.forEach(t => { const c=calcTicket(t); sold+=t.sold; gross+=c.gross; fees+=c.fees; net+=c.net; });
+    promoters.forEach(p => {
+      const c = calcComm(p, coverage);
+      comm += c.total;
+      // Manager gets 10% of net sales generated by this promoter
+      if (p.managerId) {
+        // Approximate: use average ticket net revenue * promoter's sold count
+        const avgNetPerTicket = sold > 0 ? net / sold : 0;
+        managerComm += avgNetPerTicket * p.sold * 0.10;
+      }
+    });
+    // More accurate: manager gets 10% of gross revenue (before fees) from their promoters
+    managerComm = 0;
+    promoters.forEach(p => {
+      if (!p.managerId) return;
+      const promoGross = tickets.reduce((s,t) => s + (t.price * (p.sold / Math.max(sold,1)) * t.sold), 0);
+      // Simpler: 10% of (p.sold / totalSold) * net
+      const promoNet = sold > 0 ? (net * p.sold / sold) : 0;
+      managerComm += promoNet * 0.10;
+    });
+    return { sold, gross, fees, net, comm, managerComm, profit: net - comm - managerComm };
+  }
+
+  // ─── KPI strip ──────────────────────────────────────────────────────
+  function updateKPIs() {
+    const T = totals();
+    setText('kpiTickets', fmtN(T.sold));
+    setText('kpiGross',   fmt(T.gross));
+    setText('kpiFees',    fmt(T.fees));
+    setText('kpiComm',    fmt(T.comm + T.managerComm));
+    setText('kpiProfit',  fmt(T.profit));
+  }
+
+  // ─── Ticket calculated values ────────────────────────────────────────
+  function updateTicketCalcs() {
+    tickets.forEach(t => {
+      const c  = calcTicket(t);
+      const el = document.querySelector('[data-card-id="' + t.id + '"]');
+      if (!el) return;
+      el.querySelector('[data-calc="feePerTicket"]').textContent = fmt(c.feePerTicket);
+      el.querySelector('[data-calc="gross"]').textContent        = fmt(c.gross);
+      el.querySelector('[data-calc="fees"]').textContent         = fmt(c.fees);
+      el.querySelector('[data-calc="net"]').textContent          = fmt(c.net);
+    });
+  }
+
+  // ─── Promoter calculated values ──────────────────────────────────────
+  function updatePromoCalcs() {
+    const totalSold = tickets.reduce((s,t)=>s+t.sold,0);
+    promoters.forEach(p => {
+      const c  = calcComm(p, coverage);
+      const el = document.querySelector('[data-promo-id="' + p.id + '"]');
+      if (!el) return;
+      const palierInput = el.querySelector('[data-calc="palier"]');
+      if (palierInput) palierInput.value = palierLabel(p.sold, coverage);
+      const baseEl = el.querySelector('[data-calc="base"]');
+      const bonusEl = el.querySelector('[data-calc="bonus"]');
+      const sansEl  = el.querySelector('[data-calc="sans"]');
+      const totalEl = el.querySelector('[data-calc="commTotal"]');
+      if (baseEl)  baseEl.textContent  = fmt(c.base);
+      if (bonusEl) bonusEl.textContent = fmt(c.bonus);
+      if (sansEl)  sansEl.textContent  = fmtN(Math.max(0, totalSold - p.sold));
+      if (totalEl) totalEl.textContent = fmt(c.total);
+    });
+  }
+
+  // ─── Manager calculated values ───────────────────────────────────────
+  function updateManagerCalcs() {
+    const totalSold = tickets.reduce((s,t)=>s+t.sold,0);
+    const totalNet  = tickets.reduce((s,t)=>s+calcTicket(t).net,0);
+    managers.forEach(m => {
+      const el = document.querySelector('[data-manager-id="' + m.id + '"]');
+      if (!el) return;
+      const myPromoters  = promoters.filter(p => p.managerId === m.id);
+      const myPromoSold  = myPromoters.reduce((s,p)=>s+p.sold,0);
+      const myPromoNet   = totalSold > 0 ? totalNet * myPromoSold / totalSold : 0;
+      const myComm       = myPromoNet * 0.10;
+      const myPromoNames = myPromoters.map(p=>p.name||'Sans nom').join(', ') || '—';
+      const soldEl  = el.querySelector('[data-calc="mgrSold"]');
+      const commEl  = el.querySelector('[data-calc="mgrComm"]');
+      const namesEl = el.querySelector('[data-calc="mgrPromos"]');
+      if (soldEl)  soldEl.textContent  = fmtN(myPromoSold);
+      if (commEl)  commEl.textContent  = fmt(myComm);
+      if (namesEl) namesEl.textContent = myPromoNames;
+    });
+  }
+
+  // ─── Summary ─────────────────────────────────────────────────────────
+  function updateSummary() {
+    const T = totals();
+    const promoSold   = promoters.reduce((s,p)=>s+p.sold,0);
+    const directSold  = Math.max(0, T.sold - promoSold);
+    const feeAvg      = T.sold > 0 ? T.fees / T.sold : 0;
+    const commAvg     = promoSold > 0 ? T.comm / promoSold : 0;
+    const diff        = T.comm + T.managerComm;
+    const totalSold   = T.sold;
+    const totalNet    = T.net;
+
+    setText('sumTickets',    fmtN(T.sold));
+    setText('sumPromoSold',  fmtN(promoSold));
+    setText('sumDirectSold', fmtN(directSold));
+    setText('sumGross',      fmt(T.gross));
+    setText('sumFees',       fmt(T.fees));
+    setText('sumFeeAvg',     fmt(feeAvg));
+    setText('sumComm',       fmt(T.comm));
+    setText('sumCommAvg',    fmt(commAvg));
+    setText('sumManagerComm',fmt(T.managerComm));
+    const commPct = T.net > 0 ? (diff / T.net * 100) : 0;
+    setText('sumNetNoComm',  fmt(T.net));
+    setText('finalWithPromo',fmt(T.profit));
+    setText('sumDiff',       fmt(diff));
+    setText('sumCommPct',    commPct.toFixed(1) + ' %');
+    setText('sumAllComm',    fmt(T.comm + T.managerComm));
+
+    // Promoter detail table
+    const tbody = document.getElementById('promoDetailBody');
+    if (!promoters.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:1.5rem">Aucun promoter ajouté.</td></tr>';
+    } else {
+      tbody.innerHTML = promoters.map(p => {
+        const c = calcComm(p, coverage);
+        const mgr = managers.find(m=>m.id===p.managerId);
+        return `<tr>
+          <td>${esc(p.name)}</td>
+          <td>${fmtN(p.sold)}</td>
+          <td>${fmt(c.base)}</td>
+          <td>${p.bonusEnabled ? fmt(c.bonus) : '<span style="color:var(--muted)">Désactivé</span>'}</td>
+          <td><strong>${fmt(c.total)}</strong></td>
+          <td>${mgr ? esc(mgr.name) : '—'}</td>
+          <td>${mgr && totalSold>0 ? fmt(totalNet*p.sold/totalSold*0.10) : '—'}</td>
+        </tr>`;
+      }).join('') + `<tr style="background:var(--surface-2)">
+        <td><strong>Billets sans promoter</strong></td>
+        <td><strong>${fmtN(directSold)}</strong></td>
+        <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+      </tr>`;
+    }
+
+    // Manager detail table
+    const mtbody = document.getElementById('managerDetailBody');
+    if (!mtbody) return;
+    if (!managers.length) {
+      mtbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:1.5rem">Aucun manager ajouté.</td></tr>';
+    } else {
+      mtbody.innerHTML = managers.map(m => {
+        const myPromos    = promoters.filter(p=>p.managerId===m.id);
+        const myPromoSold = myPromos.reduce((s,p)=>s+p.sold,0);
+        const myNet       = totalSold > 0 ? totalNet * myPromoSold / totalSold : 0;
+        const myComm      = myNet * 0.10;
+        return `<tr>
+          <td>${esc(m.name)}</td>
+          <td>${myPromos.map(p=>esc(p.name||'Sans nom')).join(', ')||'—'}</td>
+          <td>${fmtN(myPromoSold)}</td>
+          <td><strong>${fmt(myComm)}</strong></td>
+        </tr>`;
+      }).join('');
+    }
+  }
+
+  function recalc() {
+    updateKPIs();
+    updateTicketCalcs();
+    updatePromoCalcs();
+    updateManagerCalcs();
+    updateSummary();
+  }
+
+  // ─── Render tickets ──────────────────────────────────────────────────
+  function renderTickets() {
+    const list  = document.getElementById('ticketList');
+    const empty = document.getElementById('ticketEmpty');
+    empty.style.display = tickets.length ? 'none' : 'block';
+    list.innerHTML = '';
+    tickets.forEach((t, i) => {
+      const c   = calcTicket(t);
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.setAttribute('data-card-id', t.id);
+      div.innerHTML = `
+        <div class="card-header">
+          <strong>Billet ${i+1}</strong>
+          <button class="del-btn" data-del-ticket="${t.id}">×</button>
+        </div>
+        <div class="card-body">
+          <div class="fields">
+            <div class="field">
+              <div class="flabel"><span>Nom</span><span class="badge-opt">optionnel</span></div>
+              <input class="editable" type="text" value="${esc(t.name)}" data-id="${t.id}" data-field="name" data-type="ticket" />
+            </div>
+            <div class="field">
+              <div class="flabel"><span>Prix ($)</span><span class="badge-req">À remplir</span></div>
+              <input class="editable" type="number" min="0" step="0.01" value="${t.price}" data-id="${t.id}" data-field="price" data-type="ticket" />
+            </div>
+            <div class="field">
+              <div class="flabel"><span>Vendus</span><span class="badge-req">À remplir</span></div>
+              <input class="editable" type="number" min="0" step="1" value="${t.sold}" data-id="${t.id}" data-field="sold" data-type="ticket" />
+            </div>
+            <div class="field">
+              <div class="flabel"><span>Frais (%)</span><span class="badge-req">À remplir</span></div>
+              <input class="editable" type="number" min="0" step="0.1" value="${t.fee}" data-id="${t.id}" data-field="fee" data-type="ticket" />
+            </div>
+          </div>
+          <div class="row-results">
+            <div class="rbox"><div class="rl">Frais / billet</div><div class="rv" data-calc="feePerTicket">${fmt(c.feePerTicket)}</div></div>
+            <div class="rbox"><div class="rl">Revenu brut</div><div class="rv" data-calc="gross">${fmt(c.gross)}</div></div>
+            <div class="rbox"><div class="rl">Frais totaux</div><div class="rv" data-calc="fees">${fmt(c.fees)}</div></div>
+            <div class="rbox hi"><div class="rl">Revenu net</div><div class="rv" data-calc="net">${fmt(c.net)}</div></div>
+          </div>
+        </div>`;
+      list.appendChild(div);
+    });
+  }
+
+  // ─── Render managers ─────────────────────────────────────────────────
+  function renderManagers() {
+    const list  = document.getElementById('managerList');
+    const empty = document.getElementById('managerEmpty');
+    const totalSold = tickets.reduce((s,t)=>s+t.sold,0);
+    const totalNet  = tickets.reduce((s,t)=>s+calcTicket(t).net,0);
+    empty.style.display = managers.length ? 'none' : 'block';
+    list.innerHTML = '';
+    managers.forEach((m, i) => {
+      const myPromos    = promoters.filter(p=>p.managerId===m.id);
+      const myPromoSold = myPromos.reduce((s,p)=>s+p.sold,0);
+      const myNet       = totalSold > 0 ? totalNet * myPromoSold / totalSold : 0;
+      const myComm      = myNet * 0.10;
+      const div = document.createElement('div');
+      div.className = 'manager-card';
+      div.setAttribute('data-manager-id', m.id);
+      div.innerHTML = `
+        <div class="manager-header">
+          <strong>Manager ${i+1}</strong>
+          <button class="del-btn" data-del-manager="${m.id}">×</button>
+        </div>
+        <div class="manager-body">
+          <div class="manager-fields">
+            <div class="field">
+              <div class="flabel"><span>Nom du manager</span><span class="badge-opt">optionnel</span></div>
+              <input class="editable" type="text" value="${esc(m.name)}" data-id="${m.id}" data-field="name" data-type="manager" />
+            </div>
+            <div class="field">
+              <div class="flabel"><span>Promoters assignés</span><span class="badge-calc">calculé</span></div>
+              <input class="readonly" type="text" data-calc="mgrPromos" value="${myPromos.map(p=>p.name||'Sans nom').join(', ')||'—'}" disabled />
+            </div>
+            <div class="field">
+              <div class="flabel"><span>Billets via promoters</span><span class="badge-calc">calculé</span></div>
+              <input class="readonly" type="text" data-calc="mgrSold" value="${fmtN(myPromoSold)}" disabled />
+            </div>
+            <div class="field">
+              <div class="flabel"><span>Commission (10 %)</span><span class="badge-calc">calculé</span></div>
+              <input class="readonly" type="text" data-calc="mgrComm" value="${fmt(myComm)}" disabled />
+            </div>
+          </div>
+        </div>`;
+      list.appendChild(div);
+    });
+  }
+
+  // ─── Render promoters ────────────────────────────────────────────────
+  function renderPromoters() {
+    const list      = document.getElementById('promoList');
+    const empty     = document.getElementById('promoEmpty');
+    const totalSold = tickets.reduce((s,t)=>s+t.sold,0);
+    empty.style.display = promoters.length ? 'none' : 'block';
+    list.innerHTML = '';
+    promoters.forEach((p, i) => {
+      const c   = calcComm(p, coverage);
+      const div = document.createElement('div');
+      div.className = 'promo-card';
+      div.setAttribute('data-promo-id', p.id);
+      div.innerHTML = `
+        <div class="promo-header">
+          <strong>Promoter ${i+1}</strong>
+          <button class="del-btn" data-del-promo="${p.id}">×</button>
+        </div>
+        <div class="promo-body">
+          <div class="promo-fields">
+            <div class="field">
+              <div class="flabel"><span>Nom</span><span class="badge-opt">optionnel</span></div>
+              <input class="editable" type="text" value="${esc(p.name)}" data-id="${p.id}" data-field="name" data-type="promo" />
+            </div>
+            <div class="field">
+              <div class="flabel"><span>Billets vendus</span><span class="badge-req">À remplir</span></div>
+              <input class="editable" type="number" min="0" step="1" value="${p.sold}" data-id="${p.id}" data-field="sold" data-type="promo" />
+            </div>
+            <div class="field">
+              <div class="flabel"><span>Pallier actif</span><span class="badge-calc">calculé</span></div>
+              <input class="readonly" type="text" data-calc="palier" value="${palierLabel(p.sold, coverage)}" disabled />
+            </div>
+            <div class="field">
+              <div class="flabel"><span>Comm. / billet</span><span class="badge-calc">calculé</span></div>
+              <input class="readonly" type="text" value="5,00 $" disabled />
+            </div>
+          </div>
+          <div class="promo-options">
+            <label class="toggle-label">
+              <input type="checkbox" class="bonus-toggle" data-id="${p.id}" ${p.bonusEnabled ? "checked" : ""} />
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              <span>Bonus de pallier activé</span>
+            </label>
+            <div class="field" style="min-width:220px">
+              <div class="flabel"><span>Manager assigné</span><span class="badge-opt">optionnel</span></div>
+              <select class="editable manager-select" data-id="${p.id}">
+                <option value="">— Aucun manager —</option>
+                ${managers.map(m => `<option value="${m.id}" ${p.managerId===m.id?'selected':''}>${esc(m.name||'Manager sans nom')}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <div class="promo-results">
+            <div class="rbox"><div class="rl">Base (5$/billet)</div><div class="rv" data-calc="base">${fmt(c.base)}</div></div>
+            <div class="rbox"><div class="rl">Bonus de pallier</div><div class="rv" data-calc="bonus">${fmt(c.bonus)}</div></div>
+            <div class="rbox"><div class="rl">Billets sans ce promoter</div><div class="rv" data-calc="sans">${fmtN(Math.max(0,totalSold-p.sold))}</div></div>
+            <div class="rbox hi"><div class="rl">Total commission</div><div class="rv" data-calc="commTotal">${fmt(c.total)}</div></div>
+          </div>
+        </div>`;
+      // Bonus toggle
+      div.querySelector('.bonus-toggle').addEventListener('change', e => {
+        promoters = promoters.map(x => x.id===p.id ? {...x, bonusEnabled: e.target.checked} : x);
+        recalc();
+      });
+      // Manager select
+      div.querySelector('.manager-select').addEventListener('change', e => {
+        promoters = promoters.map(x => x.id===p.id ? {...x, managerId: e.target.value} : x);
+        renderManagers(); // rebuild manager cards to reflect new promoter assignment
+        recalc();
+      });
+      list.appendChild(div);
+    });
+  }
+
+  function fullRender() {
+    renderTickets();
+    renderManagers();
+    renderPromoters();
+    recalc();
+  }
+
+  // ─── Event delegation ─────────────────────────────────────────────────
+  document.addEventListener('input', e => {
+    const inp = e.target;
+    if (!inp.dataset.field || inp.classList.contains('readonly')) return;
+    const { id, field, type } = inp.dataset;
+    const val = (field==='name') ? inp.value : (parseFloat(inp.value)||0);
+    if      (type==='ticket')  tickets   = tickets.map(t   => t.id===id   ? {...t,   [field]:val} : t);
+    else if (type==='promo')   promoters = promoters.map(p  => p.id===id   ? {...p,   [field]:val} : p);
+    else if (type==='manager') {
+      managers = managers.map(m => m.id===id ? {...m, [field]:val} : m);
+      // Update manager dropdowns in promoter cards
+      document.querySelectorAll('.manager-select').forEach(sel => {
+        const pid = sel.dataset.id;
+        const promo = promoters.find(p=>p.id===pid);
+        const selected = promo ? promo.managerId : '';
+        sel.innerHTML = '<option value="">— Aucun manager —</option>' +
+          managers.map(m=>`<option value="${m.id}" ${m.id===selected?'selected':''}>${esc(m.name||'Manager sans nom')}</option>`).join('');
+      });
+    }
+    recalc();
+  });
+
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    if      (btn.dataset.delTicket)  { tickets   = tickets.filter(t=>t.id!==btn.dataset.delTicket);   fullRender(); }
+    else if (btn.dataset.delPromo)   { promoters = promoters.filter(p=>p.id!==btn.dataset.delPromo);  fullRender(); }
+    else if (btn.dataset.delManager) { 
+      const mid = btn.dataset.delManager;
+      managers  = managers.filter(m=>m.id!==mid);
+      promoters = promoters.map(p=>p.managerId===mid?{...p,managerId:''}:p);
+      fullRender();
+    }
+    else if (btn.id==='addTicketBtn')  { tickets.push(makeTicket());        fullRender(); }
+    else if (btn.id==='addPromoBtn')   { promoters.push(makePromo());       fullRender(); }
+    else if (btn.id==='addManagerBtn') { managers.push(makeManager());      fullRender(); }
+    else if (btn.id==='resetBtn') {
+      const m1 = makeManager('Manager Alpha');
+      managers  = [m1];
+      tickets   = [makeTicket('Billet régulier',20,15,10), makeTicket('Billet VIP',25,40,10)];
+      promoters = [
+        {...makePromo('Promoter A'), sold:20, bonusEnabled:true,  managerId:m1.id},
+        {...makePromo('Promoter B'), sold:12, bonusEnabled:true,  managerId:m1.id},
+        {...makePromo('Promoter C'), sold:8,  bonusEnabled:false, managerId:''},
+      ];
+      fullRender();
+    }
+    else if (btn.id==='themeBtn') {
+      dark = !dark;
+      document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+      btn.innerHTML = dark ? sunIcon : moonIcon;
+    }
+  });
+
+  // Coverage buttons
+  document.querySelectorAll('.cov-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      coverage = parseInt(btn.dataset.cov);
+      document.querySelectorAll('.cov-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const hints = {
+        50:  'Bonus actifs : 0–9 = 0 $ · 10–14 = 15 $ · 15–19 = 20 $ · 20–24 = 25 $ · 25–29 = 30 $ · 30+ = 35 $',
+        100: 'Bonus actifs : 0–9 = 0 $ · 10–14 = 25 $ · 15–19 = 30 $ · 20–24 = 35 $ · 25–29 = 40 $ · 30+ = 50 $',
+      };
+      document.getElementById('covHint').textContent = hints[coverage];
+      recalc();
+    });
+  });
+
+  // ─── Theme ────────────────────────────────────────────────────────────
+  const moonIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  const sunIcon  = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+  let dark = false;
+
+  // ─── Init ─────────────────────────────────────────────────────────────
+  const m1 = makeManager('Manager Alpha');
+  managers  = [m1];
+  tickets   = [makeTicket('Billet régulier',20,15,10), makeTicket('Billet VIP',25,40,10)];
+  promoters = [
+    {...makePromo('Promoter A'), sold:20, bonusEnabled:true,  managerId:m1.id},
+    {...makePromo('Promoter B'), sold:12, bonusEnabled:true,  managerId:m1.id},
+    {...makePromo('Promoter C'), sold:8,  bonusEnabled:false, managerId:''},
+  ];
+  fullRender();
+</script>
+</body>
+</html>
